@@ -1,3 +1,4 @@
+import { testConnection } from './config/db';
 import { config } from './config/config';
 import express from 'express';
 
@@ -13,6 +14,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(config.port, () => {
+app.listen(config.port, async () => {
+  await testConnection();
   console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
 });
