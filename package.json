@@ -1,0 +1,43 @@
+{
+  "name": "obraelectricaapi",
+  "version": "1.0.0",
+  "description": "API para ObraElectrica",
+  "homepage": "https://github.com/CeBarrera86/ObraElectricaApi#readme",
+  "bugs": {
+    "url": "https://github.com/CeBarrera86/ObraElectricaApi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CeBarrera86/ObraElectricaApi.git"
+  },
+  "license": "ISC",
+  "author": "Corpico Ltda. - Sector SISTEMAS",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.9.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.38.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0"
+  }
+}
