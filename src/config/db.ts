@@ -1,31 +1,24 @@
 import sql from 'mssql';
 import { config as loadEnv } from 'dotenv';
+import { dbConfigGeaCorpico, dbConfigGeaSeguridad, dbConfigAlum } from './dbConfig';
 loadEnv();
-
-const dbConfig: sql.config = {
-  user: process.env.DB_USER || undefined,
-  password: process.env.DB_PASSWORD || undefined,
-  server: process.env.DB_SERVER || 'localhost',
-  database: process.env.DB_DATABASE || 'master',
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 1433,
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000,
-  },
-  options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: process.env.DB_TRUST_CERT === 'true',
-  },
-};
 
 let pool: sql.ConnectionPool | null = null;
 
-export async function getPool(): Promise<sql.ConnectionPool> {
-  if (pool!.connected) {
-    console.log('Database connection established');
-  } else {
-    console.error('Database connection failed');
+export async function getPool(base: String): Promise<sql.ConnectionPool> {
+  let dbConfig: sql.config;
+  switch (base) {
+    case 'GeaCorpico':
+      dbConfig = dbConfigGeaCorpico;
+      break;
+    case 'GeaSeguridad':
+      dbConfig = dbConfigGeaSeguridad;
+      break;
+    case 'Alum':
+      dbConfig = dbConfigAlum;
+      break;
+    default:
+      throw new Error(`Unknown database configuration: ${base}`);
   }
   if (pool && pool.connected) return pool;
   // sql.connect retorna un global pool si se llama así; aquí usamos ConnectionPool para control
@@ -33,9 +26,10 @@ export async function getPool(): Promise<sql.ConnectionPool> {
   return pool;
 }
 
-export async function testConnection(): Promise<void> {
+export async function testConnection(base: String): Promise<void> {
+  console.log('🔌 Testing database connection...');
   try {
-    const p = await getPool();
+    const p = await getPool(base);
     console.log('✅ Database connection established');
   } catch (error) {
     console.error('❌ Database connection failed', error);
@@ -43,8 +37,8 @@ export async function testConnection(): Promise<void> {
 }
 
 // helper para consultas rápidas
-export async function query<T = any>(queryText: string, inputs?: { name: string; type: any; value: any }[]) {
-  const p = await getPool();
+export async function query<T = any>(queryText: string, inputs?: { name: string; type: any; value: any }[], base: String = 'GeaCorpico'): Promise<sql.IResult<T>> {
+  const p = await getPool(base);
   const req = p.request();
   if (inputs) for (const i of inputs) req.input(i.name, i.type, i.value);
   const result = await req.query<T>(queryText);
