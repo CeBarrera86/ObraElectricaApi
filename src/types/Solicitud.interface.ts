@@ -34,5 +34,6 @@ export interface SolicitudRequest {
     tipo: number
     subestacion?: string | null
     asociado?: number | null
-    path?: string | null
+    path?: string | null,
+    usuario: string
 }

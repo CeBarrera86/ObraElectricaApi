@@ -4,4 +4,5 @@ export interface SolicitudEstado {
     SES_ESTADO_ID: number
     SES_USUARIO: string
     SES_FECHA: Date
+    SES_OBSERVACIONES?: string
 }

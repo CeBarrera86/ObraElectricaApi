@@ -1,12 +1,17 @@
 import sql from 'mssql';
 import { config as loadEnv } from 'dotenv';
 import { dbConfigGeaCorpico, dbConfigGeaSeguridad, dbConfigAlum } from './dbConfig';
-loadEnv();
+loadEnv({ quiet: true });
 
-let pool: sql.ConnectionPool | null = null;
+const pools: { [key: string]: sql.ConnectionPool | null } = {
+  GeaCorpico: null,
+  GeaSeguridad: null,
+  Alum: null
+};
 
-export async function getPool(base: String): Promise<sql.ConnectionPool> {
+export async function getPool(base: string): Promise<sql.ConnectionPool> {
   let dbConfig: sql.config;
+  
   switch (base) {
     case 'GeaCorpico':
       dbConfig = dbConfigGeaCorpico;
@@ -20,27 +25,13 @@ export async function getPool(base: String): Promise<sql.ConnectionPool> {
     default:
       throw new Error(`Unknown database configuration: ${base}`);
   }
-  if (pool && pool.connected) return pool;
-  // sql.connect retorna un global pool si se llama así; aquí usamos ConnectionPool para control
-  pool = await new sql.ConnectionPool(dbConfig).connect();
-  return pool;
-}
 
-export async function testConnection(base: String): Promise<void> {
-  console.log('🔌 Testing database connection...');
-  try {
-    const p = await getPool(base);
-    console.log('✅ Database connection established');
-  } catch (error) {
-    console.error('❌ Database connection failed', error);
+  // Check if we already have a connected pool for this specific database
+  if (pools[base] && pools[base]!.connected) {
+    return pools[base]!;
   }
-}
 
-// helper para consultas rápidas
-export async function query<T = any>(queryText: string, inputs?: { name: string; type: any; value: any }[], base: String = 'GeaCorpico'): Promise<sql.IResult<T>> {
-  const p = await getPool(base);
-  const req = p.request();
-  if (inputs) for (const i of inputs) req.input(i.name, i.type, i.value);
-  const result = await req.query<T>(queryText);
-  return result;
+  // Create new pool for this database
+  pools[base] = await new sql.ConnectionPool(dbConfig).connect();
+  return pools[base]!;
 }

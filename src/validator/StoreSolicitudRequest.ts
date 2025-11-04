@@ -2,9 +2,14 @@ import { body, ValidationChain } from 'express-validator';
 
 export const storeSolicitudValidation: ValidationChain[] = [
     body('cuit')
-        .notEmpty().withMessage('cuit is required')
+        .optional()
         .isString().withMessage('cuit must be a string')
         .isLength({ max: 15 }).withMessage('cuit must not exceed 15 characters'),
+    
+    body('dni')
+        .optional()
+        .isString().withMessage('dni must be a string')
+        .isLength({ max: 15 }).withMessage('dni must not exceed 15 characters'),
     
     body('apellido')
         .notEmpty().withMessage('apellido is required')

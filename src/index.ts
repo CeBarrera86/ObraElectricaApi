@@ -1,10 +1,15 @@
-import { testConnection } from './config/db';
 import { config } from './config/config';
 import express from 'express';
+import router from './router/router';
+import logger from './utils/logger';
+import cors from 'cors';
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
+
+app.use('/api', router);
 
 app.get('/', (req, res) => {
   res.json({ 
@@ -15,6 +20,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(config.port, async () => {
-  await testConnection();
   console.log(`🚀 Server running on port ${config.port} in ${config.nodeEnv} mode`);
 });

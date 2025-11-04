@@ -1,6 +1,6 @@
 import sql from 'mssql';
 import { config as loadEnv } from 'dotenv';
-loadEnv();
+loadEnv({quiet: true});
 
 export const dbConfigGeaCorpico: sql.config = {
   user: process.env.DB_USER || undefined,
@@ -37,11 +37,11 @@ export const dbConfigGeaSeguridad: sql.config = {
 };
 
 export const dbConfigAlum: sql.config = {
-  user: process.env.DB_USER || undefined,
-  password: process.env.DB_PASSWORD || undefined,
-  server: process.env.DB_SERVER || 'localhost',
+  user: process.env.DB_USER_GEACOPIAS || undefined,
+  password: process.env.DB_PASSWORD_GEACOPIAS || undefined,
+  server: process.env.DB_SERVER_GEACOPIAS || 'localhost',
   database: process.env.DB_DATABASE_ALUM || 'master',
-  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 1433,
+  port: process.env.DB_PORT_GEACOPIAS ? Number(process.env.DB_PORT_GEACOPIAS) : 1433,
   pool: {
     max: 10,
     min: 0,

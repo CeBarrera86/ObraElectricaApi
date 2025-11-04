@@ -17,7 +17,8 @@ it('should return true for valid request', async () => {
         tipo: 1,
         subestacion: '451',
         asociado: 1,
-        path: '/path/to/file'
+        path: '/path/to/file',
+        usuario: 'johndoe'
     };
     const req = {
         body: validRequest,
@@ -44,6 +45,7 @@ it('should return true for a valid request with missing optional fields', async 
         altura: '123',
         localidad: 1,
         tipo: 1,
+        usuario: 'johndoe'
     };
     const req = {
         body: invalidRequest,
@@ -68,7 +70,8 @@ it('should return errors for invalid request', async () => {
         calle: 'Main St',
         altura: '123',
         localidad: 'not-an-integer',
-        tipo: null
+        tipo: null,
+        usuario: 'johndoe'
     };
     const req = {
         body: invalidRequest,
