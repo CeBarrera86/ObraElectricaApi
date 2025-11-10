@@ -1,10 +1,13 @@
-import e, { Request, Response } from "express";
+import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import { storeSolicitudValidation } from "../validator/StoreSolicitudRequest";
 import { Solicitud, SolicitudRequest } from "../types/Solicitud.interface";
 import logger from "../utils/logger";
-import { guardarSolicitud, obtenerDetalleSolicitudDeObra, obtenerSolicitudes } from "../models/solicitud.model";
+import { actualizarPathPresupuesto, guardarSolicitud, obtenerDetalleSolicitudDeObra, obtenerSolicitudes } from "../models/solicitud.model";
 import { enviarEmail } from "../services/notificarViaEmail.service";
+import fs from "fs";
+import path from "path";
+import { getEstadosFromDB } from "../models/estado.model";
 
 export const crearSolicitudDeObra = async (req: Request, res: Response) => {
     const { dni, apellido, nombre, calle, altura, piso, dpto, localidad, celular, email, tipo, username } = req.body;
@@ -51,12 +54,16 @@ export const getSolicitudesDeObra = async (req: Request, res: Response) => {
         const estadoIdNumber = estadoId ? Number(estadoId) : undefined;
         const terminoDeBusquedaString = terminoDeBusqueda ? String(terminoDeBusqueda) : undefined;
         const solicitudes = await obtenerSolicitudes(estadoIdNumber, terminoDeBusquedaString);
+        const estadosObras = await getEstadosFromDB();
         for (const solicitud of solicitudes.solicitudes) {
             solicitud.SOE_TIPO_ID = solicitudes.tiposDeObra.find((tipo) => tipo.TOE_ID === solicitud.SOE_TIPO_ID)?.TOE_ABREVIATURA || 'N/A';
             solicitud.SOE_LOCALIDAD_ID = solicitudes.localidades.find((loc) => loc.LOC_ID === solicitud.SOE_LOCALIDAD_ID)?.LOC_DESCRIPCION || 'N/A';
         }
+        for (const estado of estadosObras) {
+            estado.SES_OBSERVACIONES = solicitudes.estadosObra.find((est) => est.ESO_ID === estado.SES_ESTADO_ID)?.ESO_DESCRIPCION || 'N/A';
+        }
         logger.info("Solicitudes de obra obtenidas exitosamente");
-        res.status(200).json({ data: solicitudes.solicitudes, estadosObra: solicitudes.estadosObra });
+        res.status(200).json({ data: solicitudes.solicitudes, estados: estadosObras });
     } catch (error) {
         logger.error("Error al obtener las solicitudes de obra:", error);
         res.status(500).json({ message: "Error al obtener las solicitudes de obra", error });
@@ -84,10 +91,51 @@ export const detallesSolicitudDeObra = async (req: Request, res: Response) => {
 };
 
 export const presupuestarSolicitudDeObra = async (req: Request, res: Response) => {
-    
+    const { solicitudId, usuario } = req.query;
+    const solicitudIdNumber = Number(solicitudId);
+    if (isNaN(solicitudIdNumber)) {
+        logger.error("ID de solicitud inválido:", solicitudId);
+        res.status(400).json({ message: "ID de solicitud inválido" });
+        return;
+    }
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se recibió ningún archivo'
+            });
+        }
+
+        actualizarPathPresupuesto(solicitudIdNumber, req.file.path, String(usuario));
+
+        return res.status(200).json({
+            success: true,
+            message: 'Archivo subido exitosamente',
+            data: {
+                filename: req.file.filename,
+                originalName: req.file.originalname,
+                path: req.file.path,
+                size: req.file.size,
+                mimetype: req.file.mimetype
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al subir archivo',
+            error: error instanceof Error ? error.message : 'Error desconocido'
+        });
+    }
 };
 
 export const notificarSolicitudDeObra = async (req: Request, res: Response) => {
+    const { solicitudId } = req.query;
+    const solicitudIdNumber = Number(solicitudId);
+    if (isNaN(solicitudIdNumber)) {
+        logger.error("ID de solicitud inválido:", solicitudId);
+        res.status(400).json({ message: "ID de solicitud inválido" });
+        return;
+    }
 
     interface EmailParams {
         empresa: string;
@@ -97,31 +145,10 @@ export const notificarSolicitudDeObra = async (req: Request, res: Response) => {
         datos: Solicitud;
     }
 
-    const solicitud: Solicitud = {
-        "SOE_ID": 2,
-        "SOE_CUIT": "32599611",
-        "SOE_APELLIDO": "Barrera",
-        "SOE_NOMBRE": "Cesar",
-        "SOE_CALLE": "Calle 21",
-        "SOE_ALTURA": "287",
-        "SOE_PISO": "PB",
-        "SOE_DPTO": "1",
-        "SOE_LOCALIDAD_ID": 10041,
-        "SOE_CELULAR": "3513246198",
-        "SOE_EMAIL": "barreracesar86@gmail.com",
-        "SOE_TIPO_ID": 1,
-        "SOE_SUBESTACION": null,
-        "SOE_ASOCIADO": null,
-        "SOE_SUMINISTRO": null,
-        "SOE_OBRA": null,
-        "SOE_USUARIO": "cbarrera",
-        "SOE_FECHA": new Date("2025-04-15T10:04:56.207Z"),
-        "SOE_UPDATE": new Date("2025-04-15T10:04:56.207Z"),
-        "SOE_PATH": null
-    }
+    const solicitud = await obtenerDetalleSolicitudDeObra(solicitudIdNumber);
 
     const { para, empresa, asunto, mensaje } = req.body;
-    const datosEmail: EmailParams = { empresa, para, asunto, mensaje, datos: solicitud };
+    const datosEmail: EmailParams = { empresa, para, asunto, mensaje, datos: solicitud.solicitud[0] };
     try {
         await enviarEmail(datosEmail);
         res.status(200).json({ message: "Notificación enviada exitosamente" });

@@ -1,11 +1,9 @@
 import { config } from './config/config';
 import express from 'express';
 import router from './router/router';
-import logger from './utils/logger';
 import cors from 'cors';
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 

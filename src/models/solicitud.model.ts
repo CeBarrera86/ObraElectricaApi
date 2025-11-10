@@ -21,9 +21,7 @@ export const guardarSolicitud = async (solicitud: SolicitudRequest): Promise<IPr
             .input('DPTO', solicitud.dpto)
             .input('LOCALIDAD', solicitud.localidad)
             .input('CELULAR', solicitud.celular)
-            .input('EMAIL', solicitud.email)
-
- 
+            .input('EMAIL', solicitud.email) 
             .input('TIPO', solicitud.tipo)
             .input('USUARIO', solicitud.usuario)
             .execute('CREAR_NUEVA_SOLICITUD_DE_OBRA');
@@ -95,6 +93,21 @@ export const obtenerDetalleSolicitudDeObra = async (solicitudId: number): Promis
         return data;
     } catch (error) {
         logger.error("Error al obtener las solicitudes:", error);
+        throw error;
+    }
+};
+
+export const actualizarPathPresupuesto = async (solicitudId: number, pathPresupuesto: string, usuario: string): Promise<void> => {
+    const db = await getPool('Alum');
+    try {
+        await db.request()
+            .input('ID', solicitudId)
+            .input('PATH', pathPresupuesto)
+            .input('usuario', usuario)
+            .execute('ACTUALIZAR_PATH_PRESUPUESTO');
+        logger.info("Path de presupuesto actualizado exitosamente para la solicitud ID: " + solicitudId);
+    } catch (error) {
+        logger.error("Error al actualizar el path de presupuesto:", error);
         throw error;
     }
 };
