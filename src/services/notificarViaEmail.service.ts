@@ -2,6 +2,8 @@ import nodemailer from 'nodemailer';
 import { emailAPySU, emailElectrico, emailMasComunicaiones } from '../config/email.config';
 import logger from '../utils/logger';
 import { Solicitud } from '../types/Solicitud.interface';
+import fs from 'fs';
+import path from 'path';
 
 interface EmailParams {
     empresa: string;
@@ -9,9 +11,10 @@ interface EmailParams {
     asunto: string;
     mensaje: string;
     datos: Solicitud;
+    presupuesto?: string;
 }
 
-export const enviarEmail = async ({ empresa, para, asunto, mensaje, datos }: EmailParams) => {
+export const enviarEmail = async ({ empresa, para, asunto, mensaje, datos, presupuesto }: EmailParams) => {
     if (!para || !empresa || !asunto || !datos || !mensaje) {
         logger.warn('❌ Datos insuficientes para enviar el correo.');
         return new Error('Datos insuficientes para enviar el correo.');
@@ -59,12 +62,46 @@ export const enviarEmail = async ({ empresa, para, asunto, mensaje, datos }: Ema
     </div>
   `;
 
-    const mailOptions = {
+    const folderPath = path.join(`${process.env.NAS_PATH_PRESUPUESTOS_DEV?.replace(/\\\\/g, '\\')}`, '\\', `${datos.SOE_ID}`);
+    
+    let pathPresupuesto = '';
+
+    try {
+        if (fs.existsSync(folderPath)) {
+            const files = fs.readdirSync(folderPath);
+            // Filter files that match the pattern SOE_ID + letter (A-Z)
+            const matchingFiles = files
+                .filter((file: string) => {
+                    const regex = new RegExp(`^${datos.SOE_ID}[A-Z]\\.pdf$`, 'i');
+                    return regex.test(file);
+                })
+                .sort()
+                .reverse(); // Sort descending to get the latest (Z, Y, X... B, A)
+
+            if (matchingFiles.length > 0) {
+                pathPresupuesto = path.join(folderPath, matchingFiles[0]);
+                console.log(`Archivo de presupuesto encontrado: ${pathPresupuesto}`);
+            }
+        }
+    } catch (error) {
+        logger.warn(`⚠️ No se pudo acceder a la carpeta de presupuestos: ${error}`);
+    }
+
+    const mailOptions: any = {
         from: `"${config.nombre}" <${config.user}>`,
         to: para,
         subject: asunto,
         html
     };
+
+    mailOptions.attachments = [
+        {
+            filename: `Presupuesto_${datos.SOE_ID}.pdf`,
+            path: pathPresupuesto
+        }
+    ];
+    // if (pathPresupuesto) {
+    // }
 
     try {
         await transporter.sendMail(mailOptions);

@@ -3,7 +3,7 @@ import { validationResult } from "express-validator";
 import { storeSolicitudValidation } from "../validator/StoreSolicitudRequest";
 import { Solicitud, SolicitudRequest } from "../types/Solicitud.interface";
 import logger from "../utils/logger";
-import { actualizarPathPresupuesto, guardarSolicitud, obtenerDetalleSolicitudDeObra, obtenerSolicitudes } from "../models/solicitud.model";
+import { accederSolicitud, guardarSolicitud, obtenerDetalleSolicitudDeObra, obtenerSolicitudes } from "../models/solicitud.model";
 import { enviarEmail } from "../services/notificarViaEmail.service";
 import fs from "fs";
 import path from "path";
@@ -90,7 +90,7 @@ export const detallesSolicitudDeObra = async (req: Request, res: Response) => {
     res.status(200).json({ message: `Detalles de la solicitud de obra con ID: ${solicitudId}`, solicitudDeObra: data.solicitud, estadoObra: data.solicitudEstado });
 };
 
-export const presupuestarSolicitudDeObra = async (req: Request, res: Response) => {
+export const acreditarSolicitudDeObra = async (req: Request, res: Response) => {
     const { solicitudId, usuario } = req.query;
     const solicitudIdNumber = Number(solicitudId);
     if (isNaN(solicitudIdNumber)) {
@@ -106,7 +106,7 @@ export const presupuestarSolicitudDeObra = async (req: Request, res: Response) =
             });
         }
 
-        actualizarPathPresupuesto(solicitudIdNumber, req.file.path, String(usuario));
+        accederSolicitud(solicitudIdNumber, req.file.filename, String(usuario));
 
         return res.status(200).json({
             success: true,

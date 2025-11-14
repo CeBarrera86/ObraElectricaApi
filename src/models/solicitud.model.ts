@@ -97,17 +97,17 @@ export const obtenerDetalleSolicitudDeObra = async (solicitudId: number): Promis
     }
 };
 
-export const actualizarPathPresupuesto = async (solicitudId: number, pathPresupuesto: string, usuario: string): Promise<void> => {
+export const accederSolicitud = async (solicitudId: number, pathSolicitud: string, usuario: string): Promise<void> => {
     const db = await getPool('Alum');
     try {
         await db.request()
             .input('ID', solicitudId)
-            .input('PATH', pathPresupuesto)
+            .input('PATH', pathSolicitud)
             .input('usuario', usuario)
-            .execute('ACTUALIZAR_PATH_PRESUPUESTO');
-        logger.info("Path de presupuesto actualizado exitosamente para la solicitud ID: " + solicitudId);
+            .execute('ACREDITAR_SOLICITUD');
+        logger.info("Path de solicitud actualizado exitosamente para la solicitud ID: " + solicitudId);
     } catch (error) {
-        logger.error("Error al actualizar el path de presupuesto:", error);
+        logger.error("Error al actualizar el path de solicitud:", error);
         throw error;
     }
 };
